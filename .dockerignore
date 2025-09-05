@@ -1,0 +1,11 @@
+node_modules
+.next
+.next/cache
+.git
+Dockerfile
+.gitignore
+npm-debug.log
+pnpm-lock.yaml
+yarn.lock
+painel-mci.zip
+dev.db
