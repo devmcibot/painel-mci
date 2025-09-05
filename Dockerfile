@@ -1,21 +1,37 @@
-FROM node:20-alpine
+# ---------------------------
+# 1) Instala dependências
+# ---------------------------
+FROM node:20-slim AS deps
 WORKDIR /app
-
-# 1) Instala as dependências
-COPY package.json package-lock.json* ./
+COPY package*.json ./
 RUN npm ci
 
-# 2) Prisma client
-COPY prisma ./prisma
-RUN npx prisma generate
-
-# 3) Copia o restante do código e faz o build standalone do Next
+# ---------------------------
+# 2) Build da aplicação
+# ---------------------------
+FROM node:20-slim AS builder
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+ENV NEXT_TELEMETRY_DISABLED=1
+RUN npx prisma generate
 RUN npm run build
 
-# 4) expõe e inicia
-ENV PORT=3000
-EXPOSE 3000
+# ---------------------------
+# 3) Runtime
+# ---------------------------
+FROM node:20-slim AS runner
+WORKDIR /app
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
 
-# 5) aplica migrações e inicia o Next standalone
-CMD npx prisma migrate deploy && node .next/standalone/server.js
+# Copia apenas o que precisa pra rodar
+COPY --from=builder /app/package*.json ./
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/.next ./.next
+COPY --from=builder /app/public ./public
+COPY --from=builder /app/prisma ./prisma
+
+EXPOSE 3000
+# Migra (se houver) e sobe o Next
+CMD ["sh", "-c", "npx prisma migrate deploy && npm run start"]
