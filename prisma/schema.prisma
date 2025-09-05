@@ -1,44 +1,48 @@
+// datasource: conexão com o banco Postgres
 datasource db {
- +  provider = "postgresql"
-+  url      = env("DATABASE_URL")
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
-
-
+// client do Prisma
 generator client {
   provider = "prisma-client-js"
 }
 
+// Tabela de Usuários
 model Usuario {
-  id        Int      @id @default(autoincrement())
+  id        Int        @id @default(autoincrement())
   nome      String
-  email     String   @unique
+  email     String     @unique
   senha     String
   tipo      TipoUsuario
-  ativo     Boolean  @default(true)
-  pacientes Paciente[]
-  createdAt DateTime @default(now())
+  ativo     Boolean    @default(true)
+  pacientes Paciente[] // relação 1:N com pacientes
+  createdAt DateTime   @default(now())
 }
 
+// Tabela de Pacientes
 model Paciente {
-  id        Int       @id @default(autoincrement())
-  medico    Usuario   @relation(fields: [medicoId], references: [id])
+  id        Int        @id @default(autoincrement())
+  medico    Usuario    @relation(fields: [medicoId], references: [id])
   medicoId  Int
   nome      String
   telefone  String?
-  consultas Consulta[]
-  createdAt DateTime @default(now())
+  consultas Consulta[] // relação 1:N com consultas
+  createdAt DateTime   @default(now())
 }
 
+// Tabela de Consultas
 model Consulta {
-  id           Int      @id @default(autoincrement())
-  paciente     Paciente @relation(fields: [pacienteId], references: [id])
+  id           Int       @id @default(autoincrement())
+  paciente     Paciente  @relation(fields: [pacienteId], references: [id])
   pacienteId   Int
-  data         DateTime @default(now())
+  data         DateTime  @default(now())
   transcricao  String?
-  createdAt    DateTime @default(now())
+  createdAt    DateTime  @default(now())
 }
 
+// Enum para definir tipos de usuários
 enum TipoUsuario {
   admin
   medico
